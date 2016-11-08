@@ -30,10 +30,12 @@ namespace LuceneNetDemo
                             Console.WriteLine();
                             Console.WriteLine("Please type a search query: ");
                             var query = Console.ReadLine();
-
+                            if (string.IsNullOrWhiteSpace(query))
+                                break;
+                           
                             int totalHits = 0;
                             var results = ghi.Search(query, out totalHits);
-
+    
                             Console.WriteLine();
                             Console.ForegroundColor = ConsoleColor.Green;
                             Console.WriteLine("Found {0} results, showing top {1}", totalHits, results.Count);
@@ -47,7 +49,11 @@ namespace LuceneNetDemo
                         case "2":
                             Console.WriteLine("Please type an organization name: ");
                             var org = Console.ReadLine();
-                            ghi.IndexRepositories(org).Wait();
+                            if (!string.IsNullOrWhiteSpace(org))
+                            {
+                                ghi.IndexRepositories(org).Wait();
+                            }   
+                            break;
                             break;
                         case "q":
                             return;
