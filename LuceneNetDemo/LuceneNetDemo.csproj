@@ -67,9 +67,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Analyzers\HtmlStripAnalyzerWrapper.cs" />
-    <Compile Include="Analyzers\LowercaseKeywordAnalyzer.cs" />
-    <Compile Include="Analyzers\RepositoryNamesAnalyzer.cs" />
+    <Compile Include="Analyzers\AnonymousAnalyzer.cs" />
     <Compile Include="GitHubIndex.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

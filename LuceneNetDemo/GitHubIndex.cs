@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading.Tasks;
-using Lucene.Net.Analysis;
+﻿using Lucene.Net.Analysis;
+using Lucene.Net.Analysis.CharFilters;
+using Lucene.Net.Analysis.Core;
 using Lucene.Net.Analysis.Miscellaneous;
 using Lucene.Net.Analysis.Standard;
+using Lucene.Net.Analysis.Util;
 using Lucene.Net.Documents;
 using Lucene.Net.Index;
 using Lucene.Net.QueryParsers.Classic;
@@ -12,6 +11,10 @@ using Lucene.Net.Search;
 using Lucene.Net.Util;
 using LuceneNetDemo.Analyzers;
 using Octokit;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using Directory = Lucene.Net.Store.Directory;
 
 namespace LuceneNetDemo
@@ -40,11 +43,37 @@ namespace LuceneNetDemo
                 Credentials = new Credentials("<your GitHub API key here>")
             };
 
-            analyzer = new PerFieldAnalyzerWrapper(new HtmlStripAnalyzerWrapper(new StandardAnalyzer(LuceneVersion.LUCENE_48)),
+            analyzer = new PerFieldAnalyzerWrapper(
+                new AnonymousAnalyzer((fieldName, reader) =>
+                {
+                    var analyzer = new StandardAnalyzer(LuceneVersion.LUCENE_48);
+                    return analyzer.CreateComponents(fieldName, new HTMLStripCharFilter(reader));
+                }),
                 new Dictionary<string, Analyzer>
                 {
-                    {"owner", new LowercaseKeywordAnalyzer()},
-                    {"name", new RepositoryNamesAnalyzer()},
+                    {
+                        "owner",
+                        new AnonymousAnalyzer((fieldName, reader) =>
+                            {
+                                var source = new KeywordTokenizer(reader);
+                                TokenStream result = new ASCIIFoldingFilter(source);
+                                result = new LowerCaseFilter(LuceneVersion.LUCENE_48, result);
+                                return new Analyzer.TokenStreamComponents(source, result);
+                            }
+                        )
+                    },
+                    {
+                        "name",
+                        new AnonymousAnalyzer((fieldName, reader) =>
+                            {
+                                var source = new StandardTokenizer(LuceneVersion.LUCENE_48, reader);
+                                TokenStream result = new WordDelimiterFilter(LuceneVersion.LUCENE_48, source, 255, CharArraySet.EMPTY_SET);
+                                result = new ASCIIFoldingFilter(result);
+                                result = new LowerCaseFilter(LuceneVersion.LUCENE_48, result);
+                                return new Analyzer.TokenStreamComponents(source, result);
+                            }
+                        )
+                    }
                 });
 
             queryParser = new MultiFieldQueryParser(LuceneVersion.LUCENE_48,
