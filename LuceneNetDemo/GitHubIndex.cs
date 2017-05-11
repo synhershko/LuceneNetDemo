@@ -44,33 +44,34 @@ namespace LuceneNetDemo
             };
 
             analyzer = new PerFieldAnalyzerWrapper(
-                new AnonymousAnalyzer((fieldName, reader) =>
-                {
-                    var analyzer = new StandardAnalyzer(LuceneVersion.LUCENE_48);
-                    return analyzer.CreateComponents(fieldName, new HTMLStripCharFilter(reader));
-                }),
+                //Analyzer.NewAnonymous((fieldName, reader) =>
+                //{
+                //    var analyzer = new StandardAnalyzer(LuceneVersion.LUCENE_48);
+                //    return analyzer.CreateComponents(fieldName, new HTMLStripCharFilter(reader));
+                //}),
+                new HtmlStripAnalyzer(LuceneVersion.LUCENE_48, StopAnalyzer.ENGLISH_STOP_WORDS_SET),
                 new Dictionary<string, Analyzer>
                 {
                     {
                         "owner",
-                        new AnonymousAnalyzer((fieldName, reader) =>
+                        Analyzer.NewAnonymous((fieldName, reader) =>
                             {
                                 var source = new KeywordTokenizer(reader);
                                 TokenStream result = new ASCIIFoldingFilter(source);
                                 result = new LowerCaseFilter(LuceneVersion.LUCENE_48, result);
-                                return new Analyzer.TokenStreamComponents(source, result);
+                                return new TokenStreamComponents(source, result);
                             }
                         )
                     },
                     {
                         "name",
-                        new AnonymousAnalyzer((fieldName, reader) =>
+                        Analyzer.NewAnonymous((fieldName, reader) =>
                             {
                                 var source = new StandardTokenizer(LuceneVersion.LUCENE_48, reader);
-                                TokenStream result = new WordDelimiterFilter(LuceneVersion.LUCENE_48, source, 255, CharArraySet.EMPTY_SET);
+                                TokenStream result = new WordDelimiterFilter(LuceneVersion.LUCENE_48, source, ~WordDelimiterFlags.STEM_ENGLISH_POSSESSIVE, CharArraySet.EMPTY_SET);
                                 result = new ASCIIFoldingFilter(result);
                                 result = new LowerCaseFilter(LuceneVersion.LUCENE_48, result);
-                                return new Analyzer.TokenStreamComponents(source, result);
+                                return new TokenStreamComponents(source, result);
                             }
                         )
                     }
@@ -81,7 +82,7 @@ namespace LuceneNetDemo
 
 
             indexWriter = new IndexWriter(indexDirectory, new IndexWriterConfig(LuceneVersion.LUCENE_48, analyzer));
-            searcherManager = new SearcherManager(indexWriter, true);
+            searcherManager = new SearcherManager(indexWriter, true, null);
         }
 
         #region Indexing
@@ -89,9 +90,9 @@ namespace LuceneNetDemo
         {
             Console.WriteLine("Reading repos...");
 
-            var repos = await github.Repository.GetAllForOrg(org.ToLowerInvariant(), new ApiOptions {PageSize = 100,});
+            var repos = await github.Repository.GetAllForOrg(org.ToLowerInvariant(), new ApiOptions { PageSize = 100, });
 
-            Console.ForegroundColor = ConsoleColor.DarkGreen;         
+            Console.ForegroundColor = ConsoleColor.DarkGreen;
             foreach (var repo in repos)
             {
                 Debug.Assert(repo.Url != null);
@@ -116,7 +117,7 @@ namespace LuceneNetDemo
                 };
 
                 indexWriter.UpdateDocument(new Term("url", repo.Url), doc);
-                
+
                 // or ...
                 //indexWriter.AddDocument(doc);   
             }
@@ -142,7 +143,9 @@ namespace LuceneNetDemo
 
             // Execute the search with a fresh indexSearcher
             searcherManager.MaybeRefreshBlocking();
-            searcherManager.ExecuteSearch(searcher =>
+
+            var searcher = searcherManager.Acquire();
+            try
             {
                 var topDocs = searcher.Search(query, 10);
                 _totalHits = topDocs.TotalHits;
@@ -151,15 +154,71 @@ namespace LuceneNetDemo
                     var doc = searcher.Doc(result.Doc);
                     l.Add(new SearchResult
                     {
-                        Name = doc.GetField("name")?.StringValue,
-                        Description = doc.GetField("description")?.StringValue,
-                        Url = doc.GetField("url")?.StringValue,
+                        Name = doc.GetField("name")?.GetStringValue(),
+                        Description = doc.GetField("description")?.GetStringValue(),
+                        Url = doc.GetField("url")?.GetStringValue(),
 
                         // Results are automatically sorted by relevance
                         Score = result.Score,
                     });
                 }
-            }, exception => { Console.WriteLine(exception.ToString()); });
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
+            finally
+            {
+                searcherManager.Release(searcher);
+            }
+
+            // OLD API:
+            //searcherManager.ExecuteSearch(searcher =>
+            //{
+            //    var topDocs = searcher.Search(query, 10);
+            //    _totalHits = topDocs.TotalHits;
+            //    foreach (var result in topDocs.ScoreDocs)
+            //    {
+            //        var doc = searcher.Doc(result.Doc);
+            //        l.Add(new SearchResult
+            //        {
+            //            Name = doc.GetField("name")?.StringValue,
+            //            Description = doc.GetField("description")?.StringValue,
+            //            Url = doc.GetField("url")?.StringValue,
+
+            //            // Results are automatically sorted by relevance
+            //            Score = result.Score,
+            //        });
+            //    }
+            //}, exception => { Console.WriteLine(exception.ToString()); });
+
+            // NEW API:
+            //using (var context = searcherManager.AcquireContext())
+            //{
+            //    try
+            //    {
+            //        var searcher = context.Reference;
+            //        var topDocs = searcher.Search(query, 10);
+            //        _totalHits = topDocs.TotalHits;
+            //        foreach (var result in topDocs.ScoreDocs)
+            //        {
+            //            var doc = searcher.Doc(result.Doc);
+            //            l.Add(new SearchResult
+            //            {
+            //                Name = doc.GetField("name")?.GetStringValue(),
+            //                Description = doc.GetField("description")?.GetStringValue(),
+            //                Url = doc.GetField("url")?.GetStringValue(),
+
+            //                // Results are automatically sorted by relevance
+            //                Score = result.Score,
+            //            });
+            //        }
+            //    }
+            //    catch (Exception e)
+            //    {
+            //        Console.WriteLine(e.ToString());
+            //    }
+            //}
 
             totalHits = _totalHits;
             return l;
