@@ -1,5 +1,4 @@
 ﻿using Lucene.Net.Analysis;
-using Lucene.Net.Analysis.CharFilters;
 using Lucene.Net.Analysis.Core;
 using Lucene.Net.Analysis.Miscellaneous;
 using Lucene.Net.Analysis.Standard;
@@ -21,6 +20,19 @@ namespace LuceneNetDemo
 {
     public class GitHubIndex : IDisposable
     {
+        /// <summary>
+        /// The match version ensures you can upgrade Lucene.Net to a future version
+        /// without having to upgrade the index at the same time. This is useful if
+        /// you have many indexes and you want to migrate them one at a time
+        /// after upgrading Lucene.Net.
+        /// <para/>
+        /// In this case, you should use a MatchVersion constant per index.
+        /// MatchVersion would remain the same when Lucene.Net is upgraded,
+        /// and would only need to be changed when the index format is 
+        /// upgraded to the new version.
+        /// </summary>
+        private static readonly LuceneVersion MatchVersion = LuceneVersion.LUCENE_48;
+
         private readonly GitHubClient github;
 
         private readonly PerFieldAnalyzerWrapper analyzer;
@@ -44,44 +56,42 @@ namespace LuceneNetDemo
             };
 
             analyzer = new PerFieldAnalyzerWrapper(
-                //Analyzer.NewAnonymous((fieldName, reader) =>
-                //{
-                //    var analyzer = new StandardAnalyzer(LuceneVersion.LUCENE_48);
-                //    return analyzer.CreateComponents(fieldName, new HTMLStripCharFilter(reader));
-                //}),
-                new HtmlStripAnalyzer(LuceneVersion.LUCENE_48, StopAnalyzer.ENGLISH_STOP_WORDS_SET),
-                new Dictionary<string, Analyzer>
+                // Example of a pre-built custom analyzer
+                defaultAnalyzer: new HtmlStripAnalyzer(GitHubIndex.MatchVersion),
+
+                // Example of inline anonymous analyzers
+                fieldAnalyzers: new Dictionary<string, Analyzer>
                 {
+                    // Field analyzer for owner
                     {
                         "owner",
-                        Analyzer.NewAnonymous((fieldName, reader) =>
-                            {
-                                var source = new KeywordTokenizer(reader);
-                                TokenStream result = new ASCIIFoldingFilter(source);
-                                result = new LowerCaseFilter(LuceneVersion.LUCENE_48, result);
-                                return new TokenStreamComponents(source, result);
-                            }
-                        )
+                        Analyzer.NewAnonymous(createComponents: (fieldName, reader) =>
+                        {
+                            var source = new KeywordTokenizer(reader);
+                            TokenStream result = new ASCIIFoldingFilter(source);
+                            result = new LowerCaseFilter(GitHubIndex.MatchVersion, result);
+                            return new TokenStreamComponents(source, result);
+                        })
                     },
+                    // Field analyzer for name
                     {
                         "name",
-                        Analyzer.NewAnonymous((fieldName, reader) =>
-                            {
-                                var source = new StandardTokenizer(LuceneVersion.LUCENE_48, reader);
-                                TokenStream result = new WordDelimiterFilter(LuceneVersion.LUCENE_48, source, ~WordDelimiterFlags.STEM_ENGLISH_POSSESSIVE, CharArraySet.EMPTY_SET);
-                                result = new ASCIIFoldingFilter(result);
-                                result = new LowerCaseFilter(LuceneVersion.LUCENE_48, result);
-                                return new TokenStreamComponents(source, result);
-                            }
-                        )
+                        Analyzer.NewAnonymous(createComponents: (fieldName, reader) =>
+                        {
+                            var source = new StandardTokenizer(GitHubIndex.MatchVersion, reader);
+                            TokenStream result = new WordDelimiterFilter(GitHubIndex.MatchVersion, source, ~WordDelimiterFlags.STEM_ENGLISH_POSSESSIVE, CharArraySet.EMPTY_SET);
+                            result = new ASCIIFoldingFilter(result);
+                            result = new LowerCaseFilter(GitHubIndex.MatchVersion, result);
+                            return new TokenStreamComponents(source, result);
+                        })
                     }
                 });
 
-            queryParser = new MultiFieldQueryParser(LuceneVersion.LUCENE_48,
+            queryParser = new MultiFieldQueryParser(GitHubIndex.MatchVersion,
                 new[] { "name", "description", "readme" }, analyzer);
 
 
-            indexWriter = new IndexWriter(indexDirectory, new IndexWriterConfig(LuceneVersion.LUCENE_48, analyzer));
+            indexWriter = new IndexWriter(indexDirectory, new IndexWriterConfig(GitHubIndex.MatchVersion, analyzer));
             searcherManager = new SearcherManager(indexWriter, true, null);
         }
 
@@ -171,54 +181,6 @@ namespace LuceneNetDemo
             {
                 searcherManager.Release(searcher);
             }
-
-            // OLD API:
-            //searcherManager.ExecuteSearch(searcher =>
-            //{
-            //    var topDocs = searcher.Search(query, 10);
-            //    _totalHits = topDocs.TotalHits;
-            //    foreach (var result in topDocs.ScoreDocs)
-            //    {
-            //        var doc = searcher.Doc(result.Doc);
-            //        l.Add(new SearchResult
-            //        {
-            //            Name = doc.GetField("name")?.StringValue,
-            //            Description = doc.GetField("description")?.StringValue,
-            //            Url = doc.GetField("url")?.StringValue,
-
-            //            // Results are automatically sorted by relevance
-            //            Score = result.Score,
-            //        });
-            //    }
-            //}, exception => { Console.WriteLine(exception.ToString()); });
-
-            // NEW API:
-            //using (var context = searcherManager.AcquireContext())
-            //{
-            //    try
-            //    {
-            //        var searcher = context.Reference;
-            //        var topDocs = searcher.Search(query, 10);
-            //        _totalHits = topDocs.TotalHits;
-            //        foreach (var result in topDocs.ScoreDocs)
-            //        {
-            //            var doc = searcher.Doc(result.Doc);
-            //            l.Add(new SearchResult
-            //            {
-            //                Name = doc.GetField("name")?.GetStringValue(),
-            //                Description = doc.GetField("description")?.GetStringValue(),
-            //                Url = doc.GetField("url")?.GetStringValue(),
-
-            //                // Results are automatically sorted by relevance
-            //                Score = result.Score,
-            //            });
-            //        }
-            //    }
-            //    catch (Exception e)
-            //    {
-            //        Console.WriteLine(e.ToString());
-            //    }
-            //}
 
             totalHits = _totalHits;
             return l;

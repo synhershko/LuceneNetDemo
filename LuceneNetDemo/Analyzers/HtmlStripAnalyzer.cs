@@ -2,25 +2,27 @@
 using Lucene.Net.Analysis.CharFilters;
 using Lucene.Net.Analysis.Core;
 using Lucene.Net.Analysis.Standard;
-using Lucene.Net.Analysis.Util;
 using Lucene.Net.Util;
 using System.IO;
 
 namespace LuceneNetDemo.Analyzers
 {
-    class HtmlStripAnalyzer : StopwordAnalyzerBase
+    class HtmlStripAnalyzer : Analyzer
     {
-        public HtmlStripAnalyzer(LuceneVersion matchVersion, CharArraySet stopWords)
-            : base(matchVersion, stopWords)
+        private readonly LuceneVersion matchVersion;
+
+        public HtmlStripAnalyzer(LuceneVersion matchVersion)
         {
+            this.matchVersion = matchVersion;
         }
 
         protected override TokenStreamComponents CreateComponents(string fieldName, TextReader reader)
         {
-            StandardTokenizer standardTokenizer = new StandardTokenizer(base.m_matchVersion, reader);
-            TokenStream stream = new StandardFilter(base.m_matchVersion, standardTokenizer);
-            stream = new LowerCaseFilter(base.m_matchVersion, stream);
-            return new TokenStreamComponents(standardTokenizer, new StopFilter(base.m_matchVersion, stream, base.m_stopwords));
+            StandardTokenizer standardTokenizer = new StandardTokenizer(matchVersion, reader);
+            TokenStream stream = new StandardFilter(matchVersion, standardTokenizer);
+            stream = new LowerCaseFilter(matchVersion, stream);
+            stream = new StopFilter(matchVersion, stream, StopAnalyzer.ENGLISH_STOP_WORDS_SET);
+            return new TokenStreamComponents(standardTokenizer, stream);
         }
 
         protected override TextReader InitReader(string fieldName, TextReader reader)
