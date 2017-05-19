@@ -180,6 +180,7 @@ namespace LuceneNetDemo
             finally
             {
                 searcherManager.Release(searcher);
+                searcher = null; // Don't use searcher after this point!
             }
 
             totalHits = _totalHits;
