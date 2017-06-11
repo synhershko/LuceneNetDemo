@@ -9,9 +9,18 @@ namespace LuceneNetDemo
     {
         static void Main(string[] args)
         {
-            //TODO Replace this default credentials
-            var credentials = new Credentials("<your GitHub API key here>");
+            if (args.Length == 0 || string.IsNullOrWhiteSpace(args[0]))
+            {
+                Console.WriteLine("FATAL: No GitHub API Key Provided");
+                Console.WriteLine("If calling from the CLI, you need to pass it as the first argument: 'LuceneNetDemo.exe <Your API Key>'");
+                Console.WriteLine("In Visual Studio, you can enter it into 'Command line arguments' under the Debug tab of this project's properties.");
+                Console.WriteLine();
+                Console.WriteLine("Press a key to exit");
+                Console.ReadKey();
+                return;
+            }
 
+            var credentials = new Credentials(args[0]);
             using (var indexDirectory = FSDirectory.Open(new DirectoryInfo(@"c:\github-index")))
             using (var ghi = new GitHubIndex(indexDirectory, credentials))
             {
@@ -58,7 +67,6 @@ namespace LuceneNetDemo
                                 ghi.IndexRepositories(org).Wait();
                             }   
                             break;
-                            break;
                         case "q":
                             return;
                         default:
@@ -69,8 +77,6 @@ namespace LuceneNetDemo
                     }
                 } while (cki.Key != ConsoleKey.Escape);
             }
-
-            Console.ReadKey();
         }
     }
 }

@@ -33,31 +33,31 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Lucene.Net, Version=4.8.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Lucene.Net.4.8.0.697-beta\lib\net451\Lucene.Net.dll</HintPath>
+    <Reference Include="Lucene.Net, Version=4.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Lucene.Net.4.8.0-beta00004\lib\net451\Lucene.Net.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Lucene.Net.Analysis.Common, Version=4.8.0.697, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Lucene.Net.Analysis.Common.4.8.0.697-beta\lib\net451\Lucene.Net.Analysis.Common.dll</HintPath>
+    <Reference Include="Lucene.Net.Analysis.Common, Version=4.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Lucene.Net.Analysis.Common.4.8.0-beta00004\lib\net451\Lucene.Net.Analysis.Common.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Lucene.Net.Queries, Version=4.8.0.697, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Lucene.Net.Queries.4.8.0.697-beta\lib\net451\Lucene.Net.Queries.dll</HintPath>
+    <Reference Include="Lucene.Net.Queries, Version=4.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Lucene.Net.Queries.4.8.0-beta00004\lib\net451\Lucene.Net.Queries.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Lucene.Net.QueryParser, Version=4.8.0.697, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Lucene.Net.QueryParser.4.8.0.697-beta\lib\net451\Lucene.Net.QueryParser.dll</HintPath>
+    <Reference Include="Lucene.Net.QueryParser, Version=4.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Lucene.Net.QueryParser.4.8.0-beta00004\lib\net451\Lucene.Net.QueryParser.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Octokit, Version=0.23.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Octokit.0.23.0\lib\net45\Octokit.dll</HintPath>
+    <Reference Include="Lucene.Net.Sandbox, Version=4.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Lucene.Net.Sandbox.4.8.0-beta00004\lib\net451\Lucene.Net.Sandbox.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Octokit, Version=0.24.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Octokit.0.24.0\lib\net45\Octokit.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Collections.Immutable, Version=1.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -67,9 +67,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Analyzers\HtmlStripAnalyzerWrapper.cs" />
-    <Compile Include="Analyzers\LowercaseKeywordAnalyzer.cs" />
-    <Compile Include="Analyzers\RepositoryNamesAnalyzer.cs" />
+    <Compile Include="Analyzers\HtmlStripAnalyzer.cs" />
     <Compile Include="GitHubIndex.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
