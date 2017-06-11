@@ -33,11 +33,11 @@ namespace LuceneNetDemo
             public float Score { get; set; }
         }
 
-        public GitHubIndex(Directory indexDirectory)
+        public GitHubIndex(Directory indexDirectory, Credentials credentials)
         {
             github = new GitHubClient(new ProductHeaderValue("LuceneNetDemo"))
             {
-                Credentials = new Credentials("<your GitHub API key here>")
+                Credentials = credentials
             };
 
             analyzer = new PerFieldAnalyzerWrapper(new HtmlStripAnalyzerWrapper(new StandardAnalyzer(LuceneVersion.LUCENE_48)),
