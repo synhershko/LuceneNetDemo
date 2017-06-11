@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using Lucene.Net.Store;
+using Octokit;
 
 namespace LuceneNetDemo
 {
@@ -19,8 +20,9 @@ namespace LuceneNetDemo
                 return;
             }
 
+            var credentials = new Credentials(args[0]);
             using (var indexDirectory = FSDirectory.Open(new DirectoryInfo(@"c:\github-index")))
-            using (var ghi = new GitHubIndex(indexDirectory, args[0]))
+            using (var ghi = new GitHubIndex(indexDirectory, credentials))
             {
                 Console.WriteLine("Welcome to the Lucene.NET Demo!");
 
